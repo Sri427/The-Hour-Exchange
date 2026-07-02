@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Welcome Back, Neighbor — The Hour Exchange{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto my-16 px-4">
+  <div class="glass-card rounded-3xl p-8 shadow-xl relative overflow-hidden">
+
+    <div class="absolute -top-12 -right-12 w-36 h-36 rounded-full blur-3xl" style="background: rgba(201,146,11,0.06);"></div>
+    <div class="absolute -bottom-12 -left-12 w-36 h-36 rounded-full blur-3xl" style="background: rgba(27,67,50,0.05);"></div>
+
+    <div class="text-center mb-8 relative">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+           style="background: linear-gradient(135deg, #1B4332, #2D6A4F);">
+        <i class="fa-solid fa-clock-rotate-left text-xl" style="color: #FFE083;" aria-hidden="true"></i>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight" style="color: #1B4332;">Welcome Back, Neighbor</h1>
+      <p class="text-sm mt-1.5" style="color: #6B6460;">Log in to enter the Town Square and check your Hour Tokens.</p>
+    </div>
+
+    <form action="{{ url_for('login') }}" method="POST" class="space-y-5 relative" novalidate>
+      <div>
+        <label for="username" class="block text-xs font-bold uppercase tracking-wider mb-2" style="color: #6B6460;">Username</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style="color: #6B6460;" aria-hidden="true">
+            <i class="fa-solid fa-user"></i>
+          </span>
+          <input type="text" id="username" name="username" required autocomplete="username"
+                 class="w-full border rounded-xl py-3 pl-10 pr-4 text-base input-focus transition-all"
+                 style="background:#FFFDF6; border-color: rgba(27,67,50,0.2); color:#2A2725;"
+                 placeholder="Enter username (e.g. alice)"
+                 aria-label="Username">
+        </div>
+      </div>
+
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <label for="password" class="block text-xs font-bold uppercase tracking-wider" style="color: #6B6460;">Password</label>
+          <span class="text-xs font-semibold" style="color: #6B6460;">Just the one you set when you joined.</span>
+        </div>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style="color: #6B6460;" aria-hidden="true">
+            <i class="fa-solid fa-lock"></i>
+          </span>
+          <input type="password" id="password" name="password" required autocomplete="current-password"
+                 class="w-full border rounded-xl py-3 pl-10 pr-4 text-base input-focus transition-all"
+                 style="background:#FFFDF6; border-color: rgba(27,67,50,0.2); color:#2A2725;"
+                 placeholder="••••••••"
+                 aria-label="Password">
+        </div>
+      </div>
+
+      <button type="submit"
+              class="w-full btn-primary rounded-xl py-3 px-4 font-bold flex items-center justify-center gap-2
+                     transition-all hover:-translate-y-0.5 hover:shadow-lg active:scale-95">
+        <i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i>
+        Log In to The Town Square
+      </button>
+    </form>
+
+    <div class="mt-8 pt-6 border-t text-center text-sm" style="border-color: rgba(27,67,50,0.1);">
+      <span style="color: #6B6460;">New to The Hour Exchange?</span>
+      <a href="{{ url_for('register') }}" class="font-bold ml-1" style="color: #1B4332;">Create a card →</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

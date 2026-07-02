@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Join Our Town — The Hour Exchange{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto my-12 px-4">
+  <div class="glass-card rounded-3xl p-8 shadow-xl relative overflow-hidden">
+
+    <div class="absolute -top-12 -right-12 w-36 h-36 rounded-full blur-3xl" style="background: rgba(201,146,11,0.06);"></div>
+    <div class="absolute -bottom-12 -left-12 w-36 h-36 rounded-full blur-3xl" style="background: rgba(27,67,50,0.05);"></div>
+
+    <!-- Onboarding step progress dots -->
+    <div class="flex justify-center gap-1 mb-6" role="tablist" aria-label="Sign-up steps">
+      <span class="step-dot active" id="dot-1"></span>
+      <span class="step-dot" id="dot-2"></span>
+      <span class="step-dot" id="dot-3"></span>
+    </div>
+
+    <!-- Step 1: Welcome -->
+    <div class="onboard-step active" id="step-1">
+      <div class="text-center mb-8">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+             style="background: linear-gradient(135deg, #1B4332, #2D6A4F);">
+          <i class="fa-solid fa-seedling text-xl" style="color: #FFE083;" aria-hidden="true"></i>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight" style="color: #1B4332;">Join Our Town</h1>
+        <p class="text-sm mt-2 leading-relaxed" style="color: #6B6460;">
+          You'll start with <strong style="color: #C9920B;">10 free Hour Tokens</strong> — that's 10 hours of community help, ready to spend or earn.
+        </p>
+      </div>
+      <div class="rounded-2xl p-5 mb-6" style="background: rgba(27,67,50,0.05);">
+        <p class="text-sm font-semibold mb-3" style="color: #1B4332;">Here's how it works:</p>
+        <ul class="space-y-2 text-sm" style="color: #2A2725;">
+          <li class="flex gap-2"><i class="fa-solid fa-coins mt-0.5" style="color: #C9920B;" aria-hidden="true"></i> <span>1 token = 1 hour. No money, ever.</span></li>
+          <li class="flex gap-2"><i class="fa-solid fa-handshake mt-0.5" style="color: #1B4332;" aria-hidden="true"></i> <span>Find neighbors who need your skills — or post what you need.</span></li>
+          <li class="flex gap-2"><i class="fa-solid fa-shield-check mt-0.5" style="color: #40916C;" aria-hidden="true"></i> <span>Tokens are held in escrow until both people confirm the swap happened.</span></li>
+        </ul>
+      </div>
+      <button type="button" onclick="goStep(2)"
+              class="w-full btn-accent rounded-xl py-3 px-4 font-bold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5">
+        Sounds good — let's go! <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <!-- Step 2: Account details -->
+    <div class="onboard-step" id="step-2">
+      <div class="text-center mb-6">
+        <h2 class="text-xl font-bold" style="color: #1B4332;">Create your Neighborhood Card</h2>
+        <p class="text-sm mt-1" style="color: #6B6460;">This is how your neighbors will know you.</p>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label for="username" class="block text-xs font-bold uppercase tracking-wider mb-2" style="color: #6B6460;">
+            Username — how you'll appear on the board
+          </label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style="color: #6B6460;" aria-hidden="true">
+              <i class="fa-solid fa-user"></i>
+            </span>
+            <input type="text" id="username" name="username_preview"
+                   class="w-full border rounded-xl py-3 pl-10 pr-4 text-base input-focus transition-all"
+                   style="background:#FFFDF6; border-color: rgba(27,67,50,0.2); color:#2A2725;"
+                   placeholder="e.g. charlie or mrs_gable"
+                   aria-label="Username">
+          </div>
+        </div>
+        <div>
+          <label for="email_preview" class="block text-xs font-bold uppercase tracking-wider mb-2" style="color: #6B6460;">Email address</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style="color: #6B6460;" aria-hidden="true">
+              <i class="fa-solid fa-envelope"></i>
+            </span>
+            <input type="email" id="email_preview" name="email_preview"
+                   class="w-full border rounded-xl py-3 pl-10 pr-4 text-base input-focus transition-all"
+                   style="background:#FFFDF6; border-color: rgba(27,67,50,0.2); color:#2A2725;"
+                   placeholder="you@neighborhood.com"
+                   aria-label="Email address">
+          </div>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="goStep(1)"
+                  class="btn-ghost rounded-xl py-3 px-4 font-bold flex items-center justify-center gap-2 transition-all flex-1">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back
+          </button>
+          <button type="button" onclick="goStep(3)"
+                  class="btn-primary rounded-xl py-3 px-4 font-bold flex items-center justify-center gap-2 transition-all flex-1 hover:-translate-y-0.5">
+            Next <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Real form submission -->
+    <div class="onboard-step" id="step-3">
+      <div class="text-center mb-6">
+        <h2 class="text-xl font-bold" style="color: #1B4332;">Almost there!</h2>
+        <p class="text-sm mt-1" style="color: #6B6460;">Set a password, agree to the community pledge, and you're in.</p>
+      </div>
+      <form action="{{ url_for('register') }}" method="POST" class="space-y-4" id="register-form" novalidate>
+        <!-- Hidden fields carrying the values from step 2 -->
+        <input type="hidden" name="username" id="username-real">
+        <input type="hidden" name="email" id="email-real">
+
+        <div>
+          <label for="password" class="block text-xs font-bold uppercase tracking-wider mb-2" style="color: #6B6460;">Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" style="color: #6B6460;" aria-hidden="true">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+            <input type="password" id="password" name="password" required autocomplete="new-password"
+                   class="w-full border rounded-xl py-3 pl-10 pr-4 text-base input-focus transition-all"
+                   style="background:#FFFDF6; border-color: rgba(27,67,50,0.2); color:#2A2725;"
+                   placeholder="••••••••"
+                   aria-label="Password">
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3 pt-1">
+          <input type="checkbox" id="terms" name="terms" required
+                 class="mt-1 rounded border-stone-300"
+                 style="accent-color: #1B4332;">
+          <label for="terms" class="text-sm leading-relaxed" style="color: #2A2725;">
+            I agree to swap services in good faith — 1 hour of my time equals exactly 1 Hour Token, no exceptions.
+          </label>
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="goStep(2)"
+                  class="btn-ghost rounded-xl py-3 px-4 font-bold flex items-center justify-center gap-2 transition-all flex-1">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back
+          </button>
+          <button type="submit"
+                  class="btn-primary rounded-xl py-3 px-4 font-bold flex items-center justify-center gap-2 transition-all flex-1 hover:-translate-y-0.5 hover:shadow-lg">
+            <i class="fa-solid fa-seedling" aria-hidden="true"></i> Claim My 10 Tokens
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="mt-8 pt-6 border-t text-center text-sm" style="border-color: rgba(27,67,50,0.1);">
+      <span style="color: #6B6460;">Already have a card?</span>
+      <a href="{{ url_for('login') }}" class="font-bold ml-1" style="color: #1B4332;">Log In →</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function goStep(n) {
+  document.querySelectorAll('.onboard-step').forEach((el, i) => {
+    el.classList.toggle('active', i + 1 === n);
+  });
+  document.querySelectorAll('.step-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i + 1 === n);
+  });
+
+  // carry values forward on step 3
+  if (n === 3) {
+    document.getElementById('username-real').value = document.getElementById('username').value;
+    document.getElementById('email-real').value = document.getElementById('email_preview').value;
+  }
+}
+</script>
+{% endblock %}

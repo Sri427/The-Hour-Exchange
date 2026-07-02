@@ -1,0 +1,643 @@
+{% extends "base.html" %}
+{% block title %}The Town Square — The Hour Exchange{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- HEADER BAR                                   -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 rounded-3xl mb-6" style="background: var(--bg-raised); box-shadow: var(--shadow-sm);">
+    <div>
+      <h1 class="text-2xl font-black tracking-tight flex items-center gap-2" style="color: #1B4332; letter-spacing: -0.02em;">
+        <i class="fa-solid fa-store" style="color: #C9920B;" aria-hidden="true"></i>
+        The Town Square
+      </h1>
+      <p class="text-sm mt-1" style="color: #6B6460;">Where neighbors trade skills, not money. Everybody's hour counts the same.</p>
+    </div>
+    <div class="flex items-center gap-3 flex-wrap">
+      <button onclick="openCreateModal('REQUEST')"
+              class="btn-accent px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-sm transition-all hover:-translate-y-0.5 active:scale-95"
+              aria-label="Post a help request">
+        <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> I Need a Neighbor
+      </button>
+      <button onclick="openCreateModal('OFFER')"
+              class="btn-primary px-5 py-3 rounded-xl font-bold flex items-center gap-2 shadow-sm transition-all hover:-translate-y-0.5 active:scale-95"
+              aria-label="Offer a skill">
+        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> I Can Help With…
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SPLIT PANE                                   -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch split-pane">
+
+    <!-- LEFT: Task Feed — slightly wider (7 cols) breaks the 50/50 symmetry -->
+    <div class="lg:col-span-7 flex flex-col p-4 rounded-3xl" style="background: rgba(27,67,50,0.025); box-shadow: inset 0 1px 4px rgba(27,67,50,0.06); min-height: 560px;">
+
+      <!-- Feed Tabs -->
+      <div class="flex gap-2 mb-3" role="tablist" aria-label="Filter listings">
+        <button id="tab-requests" role="tab" aria-selected="true" onclick="switchFeedTab('request')"
+                class="tab-active flex-1 py-2.5 rounded-xl text-xs font-bold transition-all hover:-translate-y-0.5 active:scale-95"
+                aria-controls="task-feed">
+          <i class="fa-solid fa-hand-holding-heart mr-1.5" aria-hidden="true"></i>Requesting Help
+        </button>
+        <button id="tab-offers" role="tab" aria-selected="false" onclick="switchFeedTab('offer')"
+                class="tab-inactive flex-1 py-2.5 rounded-xl text-xs font-bold transition-all hover:-translate-y-0.5 active:scale-95"
+                aria-controls="task-feed">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1.5" aria-hidden="true"></i>Skills Shared
+        </button>
+      </div>
+
+      <!-- Category Filter -->
+      <div class="mb-4">
+        <label for="category-filter" class="sr-only">Filter by category</label>
+        <select id="category-filter" onchange="applyFilters()"
+                class="w-full px-4 py-2.5 rounded-xl border text-xs font-semibold input-focus transition-all"
+                style="background: #FFFDF6; border-color: rgba(27,67,50,0.2); color: #2A2725;">
+          <option value="">All Categories</option>
+          {% for cat in categories if cat != 'All' %}
+          <option value="{{ cat }}">{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Scrollable Feed — cards grow with content, no fixed height lock -->
+      <div id="task-feed" class="flex-grow overflow-y-auto space-y-3 pr-1 scroll-smooth" role="list" aria-label="Listings">
+        {% for task in tasks %}
+        <div id="task-card-{{ task.id }}"
+             class="glass-card rounded-2xl p-5 transition-all cursor-default task-card
+                    {% if task.task_type | lower == 'request' %}task-type-request{% else %}task-type-offer{% endif %}"
+             data-id="{{ task.id }}"
+             data-type="{{ task.task_type | lower }}"
+             data-category="{{ task.category }}"
+             role="listitem"
+             onmouseenter="if(window.communityMap) communityMap.highlightPin({{ task.id }})"
+             onmouseleave="if(window.communityMap) communityMap.clearHighlight()">
+
+          <!-- Header -->
+          <div class="flex justify-between items-start gap-2 mb-3">
+            <div class="flex items-center gap-1 flex-wrap">
+              {% if task.task_type | lower == 'request' %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase"
+                      style="background: rgba(201,146,11,0.1); color: #8A6300;">
+                  <i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> NEEDS HELP
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase"
+                      style="background: rgba(27,67,50,0.08); color: #1B4332;">
+                  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> SKILL OFFER
+                </span>
+              {% endif %}
+              <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold tracking-wider uppercase
+                           {% if task.urgency == 'high' %}badge-urgency-high{% elif task.urgency == 'medium' %}badge-urgency-medium{% else %}badge-urgency-low{% endif %}">
+                {{ task.urgency | upper }}
+              </span>
+              {% if task.is_bundle %}
+              <span class="px-2 py-0.5 rounded-md text-[9px] font-extrabold tracking-wider uppercase"
+                    style="background: rgba(201,146,11,0.12); color: #8A6300;">
+                <i class="fa-solid fa-people-group" aria-hidden="true"></i> BUNDLE
+              </span>
+              {% endif %}
+            </div>
+            <span class="text-sm font-black flex items-center gap-1" style="color: #8A6300;">
+              <i class="fa-solid fa-hourglass-half text-xs" style="color: #C9920B;" aria-hidden="true"></i>
+              {{ task.tokens_value }} Token{{ 's' if task.tokens_value != 1 else '' }}
+            </span>
+          </div>
+
+          <!-- Body -->
+          <div class="mb-4">
+            <h3 class="text-sm font-extrabold mb-1" style="color: #2A2725;">{{ task.title }}</h3>
+            <p class="text-xs line-clamp-2 leading-relaxed" style="color: #6B6460;">{{ task.description }}</p>
+          </div>
+
+          <!-- Footer — warm gradient divider, no hard rule -->
+          <div class="flex items-center justify-between pt-3" style="background: linear-gradient(90deg, transparent, rgba(201,146,11,0.08), transparent) no-repeat top/100% 1px; border-top: 1px solid rgba(201,146,11,0.1);">
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px]"
+                   style="background: rgba(27,67,50,0.1); color: #1B4332;">
+                {{ task.creator.username[0] | upper }}
+              </div>
+              <a href="{{ url_for('profile', user_id=task.creator.id) }}"
+                 class="text-[11px] font-bold transition-colors"
+                 style="color: #6B6460;"
+                 onmouseover="this.style.color='#1B4332'" onmouseout="this.style.color='#6B6460'">
+                @{{ task.creator.username }}
+              </a>
+              {% if task.creator.verification_tier == 2 %}
+                <span class="badge-tier-2 px-1.5 py-0.5 rounded text-[8px] font-black">Tier 2</span>
+              {% else %}
+                <span class="badge-tier-1 px-1.5 py-0.5 rounded text-[8px] font-semibold">Tier 1</span>
+              {% endif %}
+            </div>
+
+            <div class="flex items-center gap-2">
+              <!-- Flag button -->
+              {% if g.user and task.creator.id != g.user.id %}
+              <button onclick="showFlagModal({{ task.id }}, {{ task.title | tojson }})"
+                      class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-red-50"
+                      style="color: #6B6460;" title="Report this listing" aria-label="Report listing">
+                <i class="fa-solid fa-flag text-xs" aria-hidden="true"></i>
+              </button>
+              {% endif %}
+
+              <!-- Action button -->
+              {% if g.user and task.creator.id != g.user.id %}
+                <button onclick="commitToLendHand({{ task.id }}, this)"
+                        class="px-3.5 py-2 rounded-lg text-[10px] font-black tracking-wider uppercase flex items-center gap-1.5 shadow-sm
+                               transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95
+                               {% if task.task_type | lower == 'request' %}btn-accent{% else %}btn-primary{% endif %}"
+                        aria-label="{% if task.task_type | lower == 'request' %}Volunteer to help{% else %}Request this skill{% endif %}">
+                  {% if task.task_type | lower == 'request' %}
+                    <i class="fa-solid fa-hand-holding-hand" aria-hidden="true"></i> I Can Lend a Hand!
+                  {% else %}
+                    <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i> Request This Skill
+                  {% endif %}
+                </button>
+              {% elif g.user and task.creator.id == g.user.id %}
+                <span class="text-[9px] italic font-bold" style="color: #6B6460;">Your listing</span>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+        {% endfor %}
+
+        <!-- Empty state -->
+        <div id="empty-feed-state" class="hidden flex flex-col items-center justify-center py-16 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3"
+               style="background: rgba(27,67,50,0.07);">
+            <i class="fa-solid fa-leaf" style="color: #40916C;" aria-hidden="true"></i>
+          </div>
+          <p class="text-sm font-bold" style="color: #6B6460;">Nothing here yet — the board is quiet.</p>
+          <p class="text-xs mt-1" style="color: #6B6460; opacity: 0.7;">Be the first neighbor to post something!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Map — narrower (5 cols) -->
+    <div class="lg:col-span-5 flex flex-col p-4 rounded-3xl"
+         style="background: rgba(27,67,50,0.025); box-shadow: inset 0 1px 4px rgba(27,67,50,0.06); min-height: 560px;">
+
+      <div class="flex items-center justify-between mb-3 px-1">
+        <h2 class="text-sm font-semibold flex items-center gap-1.5" style="color: #6B6460;">
+          <i class="fa-solid fa-map-location-dot" style="color: #1B4332;" aria-hidden="true"></i> Neighborhood map
+        </h2>
+        <div class="flex items-center gap-2">
+          <!-- Map / List toggle -->
+          <div class="flex rounded-xl overflow-hidden" style="background: rgba(27,67,50,0.07);">
+            <button id="toggle-map" onclick="setMapView('map')" title="Map view"
+                    class="px-3 py-1.5 text-xs font-bold transition-all" aria-label="Switch to map view"
+                    style="background: #1B4332; color: white;">
+              <i class="fa-solid fa-map" aria-hidden="true"></i> Map
+            </button>
+            <button id="toggle-list" onclick="setMapView('list')" title="List view"
+                    class="px-3 py-1.5 text-xs font-bold transition-all" aria-label="Switch to list view"
+                    style="background: #FFFDF6; color: #6B6460;">
+              <i class="fa-solid fa-list" aria-hidden="true"></i> List
+            </button>
+          </div>
+          <div class="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
+               style="background: rgba(27,67,50,0.06); color: #1B4332;">
+            <span class="relative flex h-1.5 w-1.5" aria-hidden="true">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background: #40916C;"></span>
+              <span class="relative inline-flex rounded-full h-1.5 w-1.5" style="background: #40916C;"></span>
+            </span>
+            Live
+          </div>
+        </div>
+      </div>
+
+      <!-- Canvas map -->
+      <div id="map-canvas-container" class="glass-card rounded-2xl overflow-hidden flex-grow relative shadow-inner" style="background: #F5F2EA;">
+        <canvas id="chronoMap" class="w-full h-full cursor-default" aria-label="Map showing neighbor locations"></canvas>
+        <div id="mapTooltip" class="absolute hidden pointer-events-none z-50"></div>
+      </div>
+
+      <!-- List view (hidden by default on desktop, shown on mobile) -->
+      <div id="map-list-container" class="flex-grow overflow-y-auto rounded-2xl" style="display: none;" role="list" aria-label="Map listings as a list">
+        <div id="map-list-items"></div>
+        <div id="map-list-empty" class="hidden flex flex-col items-center justify-center py-12 text-center">
+          <i class="fa-solid fa-map-pin text-3xl mb-3" style="color: rgba(27,67,50,0.2);" aria-hidden="true"></i>
+          <p class="text-sm font-semibold" style="color: #6B6460;">No listings visible in the current filter.</p>
+        </div>
+      </div>
+
+      <!-- Map Legend -->
+      <div class="flex items-center justify-between mt-3 px-1 text-[10px] font-bold" style="color: #6B6460;">
+        <div class="flex items-center gap-4" role="list" aria-label="Map legend">
+          <div class="flex items-center gap-1.5" role="listitem">
+            <span class="map-pin-dot map-pin-request" aria-hidden="true"></span> Help Requests
+          </div>
+          <div class="flex items-center gap-1.5" role="listitem">
+            <span class="map-pin-dot map-pin-offer" aria-hidden="true"></span> Skill Offers
+          </div>
+          <div class="flex items-center gap-1.5" role="listitem">
+            <span class="relative flex h-2.5 w-2.5" aria-hidden="true">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background:#C9920B;"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5" style="background:#C9920B;"></span>
+            </span>
+            High Urgency
+          </div>
+        </div>
+        <span style="color: rgba(107,100,96,0.5);">Tap a neighbor to see their listing</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- CREATE TASK MODAL                           -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="createTaskModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-heading">
+  <div class="rounded-3xl p-8 max-w-lg w-full mx-4 shadow-2xl relative overflow-hidden" onclick="event.stopPropagation()"
+       style="background: #FFFDF6; max-height: 90vh; overflow-y: auto;">
+
+    <div class="flex justify-between items-center mb-6">
+      <h2 id="modal-heading" class="text-xl font-black" style="color: #1B4332;">Post to the Board</h2>
+      <button onclick="closeModal('createTaskModal')"
+              class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors"
+              aria-label="Close">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <form id="create-task-form" onsubmit="submitTaskForm(event)" class="space-y-4" novalidate>
+      <input type="hidden" id="form-task-type" name="task_type" value="REQUEST">
+
+      <div>
+        <label for="form-title" class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: #6B6460;">Title</label>
+        <input type="text" id="form-title" name="title" required
+               class="w-full border rounded-xl py-3 px-4 text-sm input-focus transition-all"
+               style="background: #FFFDF6; border-color: rgba(27,67,50,0.2); color: #2A2725;"
+               placeholder="e.g. Help moving boxes to the attic">
+      </div>
+
+      <div>
+        <label for="form-description" class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: #6B6460;">Details</label>
+        <textarea id="form-description" name="description" rows="3" required
+                  class="w-full border rounded-xl py-3 px-4 text-sm input-focus transition-all"
+                  style="background: #FFFDF6; border-color: rgba(27,67,50,0.2); color: #2A2725;"
+                  placeholder="Tell neighbors what you need and when you're free…"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="form-category" class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: #6B6460;">Category</label>
+          <select id="form-category" name="category" required
+                  class="w-full border rounded-xl py-3 px-4 text-sm input-focus transition-all"
+                  style="background: #FFFDF6; border-color: rgba(27,67,50,0.2); color: #2A2725;">
+            <option value="Learning & Growing">Learning &amp; Growing</option>
+            <option value="Lending a Hand">Lending a Hand</option>
+            <option value="Tech Help">Tech Help</option>
+            <option value="Everyday Errands">Everyday Errands</option>
+            <option value="Creative Arts">Creative Arts</option>
+          </select>
+        </div>
+        <div>
+          <label for="form-tokens" class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: #6B6460;">Hours (Tokens)</label>
+          <input type="number" id="form-tokens" name="tokens_value" value="1" min="1" required
+                 class="w-full border rounded-xl py-3 px-4 text-sm input-focus transition-all"
+                 style="background: #FFFDF6; border-color: rgba(27,67,50,0.2); color: #2A2725;"
+                 aria-label="Number of hour tokens">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="form-urgency" class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: #6B6460;">Urgency</label>
+          <select id="form-urgency" name="urgency" required
+                  class="w-full border rounded-xl py-3 px-4 text-sm input-focus transition-all"
+                  style="background: #FFFDF6; border-color: rgba(27,67,50,0.2); color: #2A2725;">
+            <option value="low">Low — whenever works</option>
+            <option value="medium">Medium — this week</option>
+            <option value="high">High — soon!</option>
+          </select>
+        </div>
+        <div>
+          <label for="form-scheduled" class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: #6B6460;">Date &amp; Time</label>
+          <input type="datetime-local" id="form-scheduled" name="scheduled_at" required
+                 class="w-full border rounded-xl py-3 px-4 text-sm input-focus transition-all"
+                 style="background: #FFFDF6; border-color: rgba(27,67,50,0.2); color: #2A2725;"
+                 aria-label="Scheduled date and time">
+        </div>
+      </div>
+
+      <div id="submit-button-container" class="pt-3">
+        <button type="submit" id="form-submit-btn"
+                class="w-full btn-accent py-3.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md transition-all hover:-translate-y-0.5 active:scale-95">
+          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Post to the Board
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Flag / Report Modal (2-step) -->
+<div id="flagModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="flag-modal-title">
+  <div class="rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl" onclick="event.stopPropagation()"
+       style="background: #FFFDF6;">
+    <div class="flex justify-between items-center mb-4">
+      <h3 id="flag-modal-title" class="text-lg font-bold" style="color: #2A2725;">
+        <i class="fa-solid fa-flag mr-2" style="color: #C0392B;" aria-hidden="true"></i>Report a Listing
+      </h3>
+      <button onclick="closeModal('flagModal')" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/5"
+              aria-label="Close">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="flag-step-1">
+      <p class="text-sm mb-4" style="color: #2A2725;">
+        You're about to report <strong id="flag-task-title"></strong>. Before you do — is this a genuine concern?
+      </p>
+      <p class="text-xs mb-5 leading-relaxed" style="color: #6B6460;">
+        Reports help keep the community safe. Misuse of this feature may affect your own reliability score.
+      </p>
+      <div class="flex gap-3">
+        <button onclick="closeModal('flagModal')" class="btn-ghost rounded-xl py-2.5 px-4 font-bold flex-1 transition-all">
+          Cancel
+        </button>
+        <button onclick="goFlagStep2()" class="rounded-xl py-2.5 px-4 font-bold flex-1 transition-all"
+                style="background: #FEF2F2; color: #C0392B;">
+          Yes, I have a concern
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="flag-step-2" class="hidden">
+      <input type="hidden" id="flag-task-id">
+      <label for="flag-reason" class="block text-sm font-semibold mb-2" style="color: #2A2725;">
+        What's the concern? (one sentence is fine)
+      </label>
+      <textarea id="flag-reason" rows="3"
+                class="w-full border rounded-xl py-3 px-4 text-sm input-focus transition-all mb-4"
+                style="background: #FFFDF6; border-color: rgba(27,67,50,0.2); color: #2A2725;"
+                placeholder="e.g. This listing asks for something outside the guidelines."></textarea>
+      <div class="flex gap-3">
+        <button onclick="document.getElementById('flag-step-1').classList.remove('hidden'); document.getElementById('flag-step-2').classList.add('hidden');"
+                class="btn-ghost rounded-xl py-2.5 px-4 font-bold flex-1 transition-all">
+          Back
+        </button>
+        <button onclick="submitFlag()" class="rounded-xl py-2.5 px-4 font-bold flex-1 transition-all"
+                style="background: #C0392B; color: white;">
+          Submit Report
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script>
+  let activeFeedTab = 'request';
+
+  function switchFeedTab(tab_type) {
+    activeFeedTab = tab_type;
+    const req = document.getElementById('tab-requests');
+    const off = document.getElementById('tab-offers');
+    if (tab_type === 'request') {
+      req.className = 'tab-active flex-1 py-2.5 rounded-xl text-xs font-bold transition-all hover:-translate-y-0.5 active:scale-95';
+      off.className = 'tab-inactive flex-1 py-2.5 rounded-xl text-xs font-bold transition-all hover:-translate-y-0.5 active:scale-95';
+      req.setAttribute('aria-selected', 'true'); off.setAttribute('aria-selected', 'false');
+    } else {
+      req.className = 'tab-inactive flex-1 py-2.5 rounded-xl text-xs font-bold transition-all hover:-translate-y-0.5 active:scale-95';
+      off.className = 'tab-active flex-1 py-2.5 rounded-xl text-xs font-bold transition-all hover:-translate-y-0.5 active:scale-95';
+      req.setAttribute('aria-selected', 'false'); off.setAttribute('aria-selected', 'true');
+    }
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const cat = document.getElementById('category-filter').value;
+    const cards = document.querySelectorAll('.task-card');
+    let count = 0;
+    const ids = [];
+    cards.forEach(card => {
+      const match = card.getAttribute('data-type') === activeFeedTab &&
+                    (!cat || card.getAttribute('data-category') === cat);
+      card.style.display = match ? 'block' : 'none';
+      if (match) { count++; ids.push(parseInt(card.getAttribute('data-id'))); }
+    });
+    if (window.communityMap) window.communityMap.setVisibleTaskIds(ids);
+    document.getElementById('empty-feed-state').classList.toggle('hidden', count > 0);
+    buildMapList(ids);
+  }
+
+  function buildMapList(ids) {
+    const container = document.getElementById('map-list-items');
+    if (!container) return;
+    const allCards = document.querySelectorAll('.task-card');
+    container.innerHTML = '';
+    allCards.forEach(card => {
+      const id = parseInt(card.getAttribute('data-id'));
+      if (!ids.includes(id)) return;
+      const isReq = card.getAttribute('data-type') === 'request';
+      const title = card.querySelector('h3')?.textContent || '';
+      const cat = card.getAttribute('data-category') || '';
+      const item = document.createElement('div');
+      item.className = 'map-list-item';
+      item.setAttribute('role', 'listitem');
+      item.innerHTML = `
+        <span class="map-pin-dot ${isReq ? 'map-pin-request' : 'map-pin-offer'}" aria-hidden="true"></span>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold truncate" style="color:#2A2725;">${title}</div>
+          <div class="text-xs" style="color:#6B6460;">${cat}</div>
+        </div>
+        <i class="fa-solid fa-chevron-right text-xs" style="color:#6B6460;" aria-hidden="true"></i>
+      `;
+      item.onclick = () => {
+        document.getElementById(`task-card-${id}`)?.scrollIntoView({behavior:'smooth', block:'center'});
+      };
+      container.appendChild(item);
+    });
+    const empty = document.getElementById('map-list-empty');
+    if (empty) empty.classList.toggle('hidden', ids.length > 0);
+  }
+
+  function setMapView(mode) {
+    const mapBtn  = document.getElementById('toggle-map');
+    const listBtn = document.getElementById('toggle-list');
+    const mapDiv  = document.getElementById('map-canvas-container');
+    const listDiv = document.getElementById('map-list-container');
+    if (mode === 'map') {
+      mapDiv.style.display = ''; listDiv.style.display = 'none';
+      mapBtn.style.background = '#1B4332'; mapBtn.style.color = 'white';
+      listBtn.style.background = '#FFFDF6'; listBtn.style.color = '#6B6460';
+    } else {
+      mapDiv.style.display = 'none'; listDiv.style.display = '';
+      listBtn.style.background = '#1B4332'; listBtn.style.color = 'white';
+      mapBtn.style.background = '#FFFDF6'; mapBtn.style.color = '#6B6460';
+    }
+  }
+
+  function openCreateModal(task_type) {
+    document.getElementById('form-task-type').value = task_type;
+    const heading = document.getElementById('modal-heading');
+    const submitContainer = document.getElementById('submit-button-container');
+    const tok = document.getElementById('tokens-count');
+    const bal = tok ? parseInt(tok.textContent) : 10;
+
+    if (task_type === 'REQUEST') {
+      heading.innerHTML = '<i class="fa-solid fa-hand-holding-heart mr-2" style="color:#C9920B;" aria-hidden="true"></i>I Need a Neighbor';
+      if (bal <= -3) {
+        submitContainer.innerHTML = `
+          <div class="rounded-2xl p-4 text-sm leading-relaxed" style="background: rgba(201,146,11,0.1); color: #8A6300;">
+            <i class="fa-solid fa-circle-exclamation mr-1.5" aria-hidden="true"></i>
+            Your token balance is getting low! Consider sharing a skill with a neighbor first — it'll earn you tokens back.
+          </div>`;
+        openModal('createTaskModal');
+        return;
+      }
+    } else {
+      heading.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-2" style="color:#1B4332;" aria-hidden="true"></i>I Can Help With…';
+    }
+
+    submitContainer.innerHTML = `
+      <button type="submit" id="form-submit-btn"
+              class="w-full btn-accent py-3.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md transition-all hover:-translate-y-0.5 active:scale-95">
+        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Post to the Board
+      </button>`;
+    openModal('createTaskModal');
+  }
+
+  async function submitTaskForm(event) {
+    event.preventDefault();
+    const btn = document.getElementById('form-submit-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Posting…'; }
+
+    const payload = {
+      title:        document.getElementById('form-title').value,
+      description:  document.getElementById('form-description').value,
+      task_type:    document.getElementById('form-task-type').value,
+      category:     document.getElementById('form-category').value,
+      tokens_value: parseInt(document.getElementById('form-tokens').value),
+      urgency:      document.getElementById('form-urgency').value,
+      scheduled_at: document.getElementById('form-scheduled').value
+    };
+
+    const res = await api('/api/task/create', 'POST', payload);
+    if (res.success) {
+      closeModal('createTaskModal');
+      showToast(res.message || 'Your listing is live on the board!', 'success');
+      document.getElementById('create-task-form').reset();
+
+      const refresh = await api('/api/tasks');
+      if (window.communityMap) window.communityMap.setTasks(refresh);
+
+      const task = res.task;
+      const isReq = task.task_type === 'request';
+      const feed = document.getElementById('task-feed');
+      const card = document.createElement('div');
+      card.id = `task-card-${task.id}`;
+      card.className = `glass-card rounded-2xl p-5 transition-all cursor-default task-card task-type-${task.task_type}`;
+      card.setAttribute('data-id', task.id);
+      card.setAttribute('data-type', task.task_type);
+      card.setAttribute('data-category', task.category);
+      card.setAttribute('role', 'listitem');
+      card.innerHTML = `
+        <div class="flex justify-between items-start gap-2 mb-3">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase"
+                style="${isReq ? 'background:rgba(201,146,11,0.1);color:#8A6300;' : 'background:rgba(27,67,50,0.08);color:#1B4332;'}">
+            ${isReq ? 'NEEDS HELP' : 'SKILL OFFER'}
+          </span>
+          <span class="text-sm font-black flex items-center gap-1" style="color:#8A6300;">
+            <i class="fa-solid fa-hourglass-half text-xs" style="color:#C9920B;"></i>
+            ${task.tokens_value} Token${task.tokens_value !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <div class="mb-4">
+          <h3 class="text-sm font-extrabold mb-1" style="color:#2A2725;">${task.title}</h3>
+          <p class="text-xs line-clamp-2 leading-relaxed" style="color:#6B6460;">${task.description}</p>
+        </div>
+        <div class="flex items-center justify-between pt-3" style="border-top: 1px solid rgba(201,146,11,0.09);">
+          <span class="text-[11px] font-medium" style="color:#6B6460;">@${task.creator_username}</span>
+          <span class="text-[9px] font-medium" style="color:#6B6460;">Your listing</span>
+        </div>`;
+      feed.prepend(card);
+      applyFilters();
+      btn && (btn.disabled = false);
+    } else {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Post to the Board'; }
+      showToast(res.message || 'Could not post listing.', 'error');
+    }
+  }
+
+  async function commitToLendHand(task_id, btn) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1.5"></i> Committing…';
+    btn.classList.add('btn-lend-pulse');
+
+    const res = await api(`/api/task/book/${task_id}`, 'POST');
+    if (res.success) {
+      showToast(res.message || 'You\'re committed! Check My Swaps for next steps.', 'success');
+      const card = document.getElementById(`task-card-${task_id}`);
+      if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.transform = 'scale(0.9)';
+        card.style.opacity = '0';
+        setTimeout(() => { card.remove(); applyFilters(); }, 300);
+      }
+      updateWelcomeBar({ user_tokens: res.user_tokens, global_hours: res.global_hours });
+      const refresh = await api('/api/tasks');
+      if (window.communityMap) window.communityMap.setTasks(refresh);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = orig;
+      btn.classList.remove('btn-lend-pulse');
+      showToast(res.message || 'Booking failed. Try again.', 'error');
+    }
+  }
+
+  // Flag modal helpers
+  function showFlagModal(taskId, taskTitle) {
+    document.getElementById('flag-task-id').value = taskId;
+    document.getElementById('flag-task-title').textContent = `"${taskTitle}"`;
+    document.getElementById('flag-step-1').classList.remove('hidden');
+    document.getElementById('flag-step-2').classList.add('hidden');
+    openModal('flagModal');
+  }
+  function goFlagStep2() {
+    document.getElementById('flag-step-1').classList.add('hidden');
+    document.getElementById('flag-step-2').classList.remove('hidden');
+  }
+  async function submitFlag() {
+    const taskId = document.getElementById('flag-task-id').value;
+    const reason = document.getElementById('flag-reason').value.trim();
+    if (!reason) { showToast('Please add a brief reason.', 'warning'); return; }
+    const res = await api(`/api/report/${taskId}`, 'POST', { reason });
+    closeModal('flagModal');
+    showToast(res.message || 'Thanks for letting us know. We\'ll look into it.', res.success ? 'success' : 'warning');
+  }
+
+  // Load community impact stats
+  async function loadImpact() {
+    try {
+      const res = await api('/api/stats/impact');
+      if (res && (res.total_hours !== undefined || res.hours_shared !== undefined)) {
+        animateValue(document.getElementById('impact-hours'), 0, res.total_hours || res.hours_shared || 0, 1000);
+        animateValue(document.getElementById('impact-skills'), 0, res.skills_shared || 0, 1000);
+        animateValue(document.getElementById('impact-neighbors'), 0, res.neighbors_connected || 0, 1000);
+      }
+    } catch (e) { /* silent if endpoint not yet live */ }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    switchFeedTab('request');
+    loadImpact();
+    // mobile: default to list view
+    if (window.innerWidth < 768) setMapView('list');
+  });
+</script>
+{% endblock %}

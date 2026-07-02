@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% block title %}{{ profile_user.username }}'s Neighborhood Card — The Hour Exchange{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- VELOCITY FLAG (fraud detection warning)      -->
+  <!-- ═══════════════════════════════════════════ -->
+  {% if velocity_flag %}
+  <div class="rounded-2xl p-4 mb-6 flex items-start gap-3 text-sm"
+       style="background: rgba(201,146,11,0.08); color: #8A6300;"
+       role="alert">
+    <i class="fa-solid fa-triangle-exclamation mt-0.5" aria-hidden="true"></i>
+    <span>Our system flagged some unusual activity on this account recently. Everything may be fine — this is just a heads-up for transparency.</span>
+  </div>
+  {% endif %}
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- PROFILE HEADER CARD                          -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="glass-card rounded-3xl p-8 shadow-md mb-6 relative overflow-hidden">
+    <div class="absolute -top-16 -right-16 w-48 h-48 rounded-full blur-3xl" style="background: rgba(201,146,11,0.05);"></div>
+    <div class="absolute -bottom-16 -left-16 w-48 h-48 rounded-full blur-3xl" style="background: rgba(27,67,50,0.04);"></div>
+
+    <div class="flex flex-col md:flex-row items-start md:items-center gap-6 relative">
+      <!-- Avatar -->
+      <div class="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0"
+           style="background: linear-gradient(135deg, #1B4332, #2D6A4F);">
+        <span class="text-3xl font-black text-white" aria-hidden="true">{{ profile_user.username[0] | upper }}</span>
+      </div>
+
+      <!-- Info -->
+      <div class="flex-grow">
+        <div class="flex flex-wrap items-center gap-2 mb-1">
+          <h1 class="text-2xl font-black tracking-tight" style="color: #2A2725;">@{{ profile_user.username }}</h1>
+
+          <!-- Tier badge -->
+          {% if profile_user.verification_tier == 2 %}
+            <span id="tier-badge" class="badge-tier-2 px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1">
+              <i class="fa-solid fa-shield-check" aria-hidden="true"></i> Tier 2: In-Home Friendly
+            </span>
+          {% else %}
+            <span id="tier-badge" class="badge-tier-1 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+              <i class="fa-solid fa-circle-user" aria-hidden="true"></i> Tier 1: Digital &amp; Public
+            </span>
+          {% endif %}
+
+          <!-- Trust badge (replaces raw % score) -->
+          {% set badge_label, badge_icon = profile_user.badge %}
+          {% if badge_label == 'Community Star' %}
+            <span class="trust-badge trust-badge-star"><i class="fa-solid fa-{{ badge_icon }}" aria-hidden="true"></i> {{ badge_label }}</span>
+          {% elif badge_label == 'Trusted Neighbor' %}
+            <span class="trust-badge trust-badge-trusted"><i class="fa-solid fa-{{ badge_icon }}" aria-hidden="true"></i> {{ badge_label }}</span>
+          {% elif badge_label == 'Active Neighbor' %}
+            <span class="trust-badge trust-badge-active"><i class="fa-solid fa-{{ badge_icon }}" aria-hidden="true"></i> {{ badge_label }}</span>
+          {% else %}
+            <span class="trust-badge trust-badge-new"><i class="fa-solid fa-{{ badge_icon }}" aria-hidden="true"></i> {{ badge_label }}</span>
+          {% endif %}
+        </div>
+
+        <p class="text-sm font-semibold" style="color: #6B6460;">{{ profile_user.email }}</p>
+
+        <!-- Metrics -->
+        <div class="flex flex-wrap items-center gap-5 mt-3">
+          <div class="flex items-center gap-1.5 text-xs font-bold" style="color: #6B6460;">
+            <i class="fa-solid fa-hourglass-half text-sm" style="color: #C9920B;" aria-hidden="true"></i>
+            <span><strong style="color: #2A2725;">{{ profile_user.time_tokens }}</strong> Hour Tokens</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs font-bold" style="color: #6B6460;">
+            <i class="fa-solid fa-handshake text-sm" style="color: #1B4332;" aria-hidden="true"></i>
+            <span><strong style="color: #2A2725;">{{ profile_user.completed_tasks_count }}</strong> Swaps Completed</span>
+          </div>
+          <!-- Reliability score shown as a small note, badge is primary indicator -->
+          <div class="flex items-center gap-1.5 text-xs" style="color: #6B6460;">
+            <i class="fa-solid fa-chart-simple text-xs" style="color: #40916C;" aria-hidden="true"></i>
+            <span>{{ profile_user.reliability_score }}% reliability</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions panel -->
+      <div class="flex flex-col items-end gap-3 flex-shrink-0">
+        {% if g.user and g.user.id != profile_user.id and profile_user.verification_tier < 2 %}
+          {% if g.user.verification_tier >= 2 %}
+            {% if already_vouched %}
+              <button disabled
+                      class="px-5 py-2.5 rounded-xl text-xs font-black cursor-not-allowed"
+                      style="background: #F5F3EE; color: #6B6460;">
+                <i class="fa-solid fa-circle-check mr-1" aria-hidden="true"></i> Vouch Submitted
+              </button>
+            {% else %}
+              <button onclick="submitNeighborVouch({{ profile_user.id }}, this)"
+                      class="btn-primary px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                      aria-label="Vouch for {{ profile_user.username }}">
+                <i class="fa-solid fa-stamp" aria-hidden="true"></i> Vouch for this Neighbor
+              </button>
+            {% endif %}
+          {% else %}
+            <div class="text-xs italic rounded-xl px-4 py-2.5 font-semibold"
+                 style="background: #F5F3EE; color: #6B6460;">
+              <i class="fa-solid fa-info-circle mr-1" aria-hidden="true"></i>Tier 2 required to vouch
+            </div>
+          {% endif %}
+        {% endif %}
+
+        <!-- Eval override panel (demo only) -->
+        {% if g.user %}
+          <div class="rounded-xl px-4 py-3 text-xs"
+               style="background: rgba(201,146,11,0.06); color: #8A6300;">
+            <p class="font-extrabold mb-1.5 flex items-center gap-1">
+              <i class="fa-solid fa-flask" aria-hidden="true"></i> Demo Override
+            </p>
+            <button onclick="adminToggleTier({{ profile_user.id }}, this)"
+                    class="px-3 py-1.5 rounded-lg text-[10px] font-black transition-all active:scale-95"
+                    style="background: #C9920B; color: white;"
+                    aria-label="Toggle verification tier">
+              {% if profile_user.verification_tier == 1 %}
+                <i class="fa-solid fa-arrow-up mr-1" aria-hidden="true"></i>Promote to Tier 2
+              {% else %}
+                <i class="fa-solid fa-arrow-down mr-1" aria-hidden="true"></i>Return to Tier 1
+              {% endif %}
+            </button>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Vouching Progress Bar -->
+    {% if profile_user.verification_tier < 2 %}
+    <div id="vouch-bar" class="mt-6 pt-5 border-t" style="border-color: rgba(27,67,50,0.1);">
+      <div class="flex justify-between items-center mb-2">
+        <p class="text-xs font-extrabold uppercase tracking-wider" style="color: #6B6460;">
+          <i class="fa-solid fa-stamp mr-1" style="color: #40916C;" aria-hidden="true"></i> In-Home Friendly Progress
+        </p>
+        <span id="vouch-count-text" class="text-xs font-black" style="color: #2A2725;">{{ vouches_count }}/2 Vouches</span>
+      </div>
+      <div class="bundle-bar-track" role="progressbar" aria-valuenow="{{ vouches_count }}" aria-valuemin="0" aria-valuemax="2" aria-label="Vouching progress">
+        <div id="vouch-progress-bar" class="bundle-bar-fill" style="width: {{ (vouches_count / 2 * 100) | min(100) }}%;"></div>
+      </div>
+      <p class="text-[10px] mt-1.5 font-semibold" style="color: #6B6460;">Two Tier 2 vouches unlock In-Home Friendly status.</p>
+    </div>
+    {% else %}
+    <div class="mt-6 pt-5 border-t" style="border-color: rgba(27,67,50,0.1);">
+      <div class="flex items-center gap-2 text-xs font-bold rounded-xl px-4 py-3"
+           style="background: rgba(27,67,50,0.06); color: #1B4332;">
+        <i class="fa-solid fa-shield-check" style="color: #40916C;" aria-hidden="true"></i>
+        This neighbor has two community vouches and is verified as In-Home Friendly.
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- TWO COLUMN                                   -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+    <!-- Skill Endorsements -->
+    <div class="glass-card rounded-3xl p-6 shadow-sm">
+      <h2 class="text-sm font-extrabold mb-4 flex items-center gap-2" style="color: #1B4332;">
+        <i class="fa-solid fa-medal" style="color: #C9920B;" aria-hidden="true"></i> Skill Endorsements
+      </h2>
+      {% if endorsements %}
+        <div class="space-y-3" role="list">
+          {% for endorsement in endorsements %}
+            <div class="flex items-center justify-between rounded-xl px-4 py-3"
+                 style="background: rgba(27,67,50,0.04);"
+                 role="listitem">
+              <span class="text-xs font-bold" style="color: #2A2725;">{{ endorsement.skill_name }}</span>
+              <span class="flex items-center gap-1 text-xs font-black" style="color: #8A6300;">
+                {% for i in range(endorsement.endorsement_count) %}★{% endfor %}
+                <span class="font-semibold" style="color: #6B6460;">({{ endorsement.endorsement_count }})</span>
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-xs italic font-semibold text-center py-6" style="color: #6B6460;">
+          No endorsements yet — finish a few swaps to earn some!
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- Neighbor Reviews -->
+    <div class="glass-card rounded-3xl p-6 shadow-sm">
+      <h2 class="text-sm font-extrabold mb-4 flex items-center gap-2" style="color: #1B4332;">
+        <i class="fa-solid fa-comments" style="color: #C9920B;" aria-hidden="true"></i> Neighbor Feedback
+      </h2>
+      {% if reviews %}
+        <div class="space-y-4 max-h-[360px] overflow-y-auto pr-1" role="list">
+          {% for review in reviews %}
+            <div class="rounded-xl p-4"
+                 style="background: rgba(27,67,50,0.04);"
+                 role="listitem">
+              <div class="flex justify-between mb-2">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black"
+                       style="background: rgba(27,67,50,0.1); color: #1B4332;" aria-hidden="true">
+                    {{ review.reviewer.username[0] | upper }}
+                  </div>
+                  <a href="{{ url_for('profile', user_id=review.reviewer_id) }}"
+                     class="text-[11px] font-bold transition-colors" style="color: #6B6460;"
+                     onmouseover="this.style.color='#1B4332'" onmouseout="this.style.color='#6B6460'">
+                    @{{ review.reviewer.username }}
+                  </a>
+                </div>
+                <span class="text-xs" style="color: #C9920B;" aria-label="{{ review.rating }} out of 5 stars">
+                  {% for i in range(review.rating) %}★{% endfor %}{% for i in range(5-review.rating) %}☆{% endfor %}
+                </span>
+              </div>
+              <p class="text-xs leading-relaxed italic" style="color: #2A2725;">"{{ review.comment }}"</p>
+              {% if review.endorsement_line %}
+              <p class="text-[10px] font-semibold mt-2 rounded-lg px-2 py-1 inline-block"
+                 style="background: rgba(201,146,11,0.08); color: #8A6300;">
+                <i class="fa-solid fa-quote-left text-[8px] mr-1" aria-hidden="true"></i>{{ review.endorsement_line }}
+              </p>
+              {% endif %}
+              <p class="text-[9px] mt-2 font-semibold" style="color: #6B6460;">{{ review.skill_category }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-xs italic font-semibold text-center py-6" style="color: #6B6460;">
+          No feedback yet — your first swap will get things started!
+        </p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECOND-DEGREE NEIGHBOR SUGGESTIONS           -->
+  <!-- ═══════════════════════════════════════════ -->
+  {% if second_deg %}
+  <div class="glass-card rounded-3xl p-6 shadow-sm mb-6">
+    <h2 class="text-sm font-extrabold mb-2 flex items-center gap-2" style="color: #1B4332;">
+      <i class="fa-solid fa-people-arrows" style="color: #40916C;" aria-hidden="true"></i>
+      Neighbors You Might Know
+    </h2>
+    <p class="text-xs mb-4" style="color: #6B6460;">These folks have connected with people you've already swapped with — a great place to expand your network.</p>
+    <div class="flex flex-wrap gap-3" role="list">
+      {% for neighbor in second_deg %}
+      <a href="{{ url_for('profile', user_id=neighbor.id) }}"
+         class="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all hover:-translate-y-0.5"
+         style="background: rgba(27,67,50,0.05);"
+         role="listitem">
+        <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black"
+             style="background: rgba(27,67,50,0.12); color: #1B4332;">
+          {{ neighbor.username[0] | upper }}
+        </div>
+        <div>
+          <div class="text-xs font-bold" style="color: #2A2725;">@{{ neighbor.username }}</div>
+          <div class="text-[10px]" style="color: #6B6460;">{{ neighbor.completed_tasks_count }} swaps</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  async function submitNeighborVouch(vouchee_id, btn) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1" aria-hidden="true"></i> Vouching…';
+
+    const res = await api(`/api/vouch/${vouchee_id}`, 'POST');
+    if (res.success) {
+      showToast(res.message, 'success');
+      const countEl  = document.getElementById('vouch-count-text');
+      const barEl    = document.getElementById('vouch-progress-bar');
+      if (countEl) countEl.textContent = `${res.vouches_count}/2 Vouches`;
+      if (barEl)   barEl.style.width = Math.min((res.vouches_count / 2) * 100, 100) + '%';
+
+      if (res.promoted) {
+        const badge = document.getElementById('tier-badge');
+        if (badge) {
+          badge.className = 'badge-tier-2 px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1';
+          badge.innerHTML = '<i class="fa-solid fa-shield-check" aria-hidden="true"></i> Tier 2: In-Home Friendly';
+        }
+        const vouchBar = document.getElementById('vouch-bar');
+        if (vouchBar) {
+          vouchBar.innerHTML = `<div class="flex items-center gap-2 text-xs font-bold rounded-xl px-4 py-3" style="background:rgba(27,67,50,0.06);color:#1B4332;">
+            <i class="fa-solid fa-shield-check" style="color:#40916C;" aria-hidden="true"></i>
+            This neighbor is now In-Home Friendly — congratulations!
+          </div>`;
+        }
+      }
+      btn.innerHTML = '<i class="fa-solid fa-circle-check mr-1" aria-hidden="true"></i> Vouch Submitted';
+      btn.style.background = '#F5F3EE'; btn.style.color = '#6B6460';
+      btn.style.border = '1px solid #E0DDD6'; btn.style.cursor = 'not-allowed';
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-stamp" aria-hidden="true"></i> Vouch for this Neighbor';
+      showToast(res.message || 'Could not submit vouch.', 'error');
+    }
+  }
+
+  async function adminToggleTier(user_id, btn) {
+    const res = await api(`/api/admin/toggle-tier/${user_id}`, 'POST');
+    if (res.success) {
+      showToast(res.message, 'success');
+      setTimeout(() => location.reload(), 1200);
+    } else {
+      showToast(res.message || 'Toggle failed.', 'error');
+    }
+  }
+</script>
+{% endblock %}
