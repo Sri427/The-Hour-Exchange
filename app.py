@@ -10,7 +10,7 @@ from models import (db, GoodNeighbor, ActOfService, NeighborVouchPool, HoursExch
 from database import init_db
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'hour-exchange-secret-key-2026-prod'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'hour-exchange-secret-key-2026-prod')
 
 if os.environ.get('CHRONO_TESTING') == 'true':
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
@@ -1142,4 +1142,5 @@ def api_admin_fraud_logs():
 
 if __name__ == '__main__':
     import os as _os
-    app.run(debug=True, port=int(_os.environ.get('PORT', 5001)))
+    debug_mode = _os.environ.get('FLASK_DEBUG', 'true').lower() == 'true'
+    app.run(debug=debug_mode, host='0.0.0.0', port=int(_os.environ.get('PORT', 5001)))

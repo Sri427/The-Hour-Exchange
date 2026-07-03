@@ -1,6 +1,6 @@
 /* The Hour Exchange — Community Stylesheet */
 /* Forest Green #1B4332 + Warm Gold #C9920B */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Calistoga&display=swap');
 
 :root {
     --forest:        #1B4332;
@@ -39,6 +39,8 @@ html { scroll-behavior: smooth; }
 body {
     font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
     background-color: var(--bg-base);
+    background-image: radial-gradient(circle at 1px 1px, rgba(27,67,50,0.05) 1px, transparent 0);
+    background-size: 24px 24px;
     color: var(--charcoal);
     font-size: 15px;
     font-weight: 400;           /* regular body weight */
@@ -46,6 +48,7 @@ body {
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
 }
+body.high-contrast { background-image: none; }
 
 /* Typography hierarchy — weight does the work, not size */
 h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; letter-spacing: -0.015em; }
@@ -56,6 +59,24 @@ strong, b { font-weight: 600; }
 .font-bold { font-weight: 700 !important; }
 .font-extrabold { font-weight: 700 !important; }
 .font-black { font-weight: 800 !important; }
+
+/* Warm display serif for page-level headings — adds handmade character
+   without touching the Plus Jakarta Sans body/UI voice. */
+.font-display {
+    font-family: 'Calistoga', Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+}
+
+/* ── Motion sensitivity ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
 
 /* ── Cards — NO borders, shadow + bg depth only ─────── */
 .card, .glass-card, .glass-panel {
@@ -177,6 +198,12 @@ strong, b { font-weight: 600; }
     background: rgba(27,67,50,0.05);
     border-color: rgba(27,67,50,0.18);
     color: var(--forest);
+}
+
+.btn-primary:active,
+.btn-accent:active,
+.btn-ghost:active {
+    transform: scale(0.97);
 }
 
 /* ── Urgency / Tier Badges ──────────────────────────── */
