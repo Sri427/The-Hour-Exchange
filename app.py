@@ -394,6 +394,11 @@ def logout():
 # page routes
 # ---------------------------------------------------------------------------
 
+@app.route('/video-ad')
+def video_ad():
+    return render_template('video_ad.html')
+
+
 @app.route('/')
 @login_required
 def index():

@@ -136,7 +136,7 @@
         <span id="vouch-count-text" class="text-xs font-black" style="color: #2A2725;">{{ vouches_count }}/2 Vouches</span>
       </div>
       <div class="bundle-bar-track" role="progressbar" aria-valuenow="{{ vouches_count }}" aria-valuemin="0" aria-valuemax="2" aria-label="Vouching progress">
-        <div id="vouch-progress-bar" class="bundle-bar-fill" style="width: {{ (vouches_count / 2 * 100) | min(100) }}%;"></div>
+        <div id="vouch-progress-bar" class="bundle-bar-fill" style="width: {{ [vouches_count / 2 * 100, 100] | min }}%;"></div>
       </div>
       <p class="text-[10px] mt-1.5 font-semibold" style="color: #6B6460;">Two Tier 2 vouches unlock In-Home Friendly status.</p>
     </div>
