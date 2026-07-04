@@ -6,6 +6,16 @@ The frontend is built with a clean, earthy UI theme (cream and forest green) usi
 
 ---
 
+## Live App
+
+The platform is deployed and running at:
+
+**https://the-hour-exchange.onrender.com**
+
+No setup required to use the live version. Use the test accounts below to explore all features.
+
+---
+
 ## Design System
 
 * **Background:** Warm cream (`#FAF9F6` / `stone-50`)
@@ -17,13 +27,12 @@ The frontend is built with a clean, earthy UI theme (cream and forest green) usi
 
 ## Local Setup
 
-Run these commands to get the platform up and running on your local machine:
+To run the platform locally instead:
 
 ### 1. Move to the project directory
 
 ```bash
 cd /Users/ishaanagarwal/.gemini/antigravity/scratch/chronocommunity
-
 ```
 
 ### 2. Set up and activate a virtual environment
@@ -31,24 +40,21 @@ cd /Users/ishaanagarwal/.gemini/antigravity/scratch/chronocommunity
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-
 ```
 
 ### 3. Install dependencies
 
 ```bash
 pip install Flask Flask-SQLAlchemy
-
 ```
 
 ### 4. Boot up the server
 
 ```bash
 python app.py
-
 ```
 
-The app will spin up locally at `[http://127.0.0.1:5001/](http://127.0.0.1:5001/)`.
+The app will spin up locally at `http://127.0.0.1:5001/`.
 
 ---
 
@@ -58,14 +64,13 @@ To run the automated integration tests for holding balances, tier status upgrade
 
 ```bash
 python test_app.py
-
 ```
 
 ---
 
 ## Live Demo & Feature Walkthrough
 
-The local SQLite database comes pre-seeded with five test accounts (all passwords are `password123`):
+The database comes pre-seeded with five test accounts (all passwords are `password123`):
 
 * **`alice`** (Tier 2: In-Home Verified) • 15 Tokens
 * **`bob`** (Tier 2: In-Home Verified) • 12 Tokens
@@ -85,20 +90,20 @@ The local SQLite database comes pre-seeded with five test accounts (all password
 1. Log in as **`alice`**. Go to **The Town Square** marketplace, find Charlie's listing for **"Help with High School Calculus"** (Cost: 1 Hour Token), and click **Lend a Hand**.
 2. Check the **Our Shared History** tab. Under **Swaps In Progress**, you will see a card showing **1 Hour Token locked in holding**.
 3. Open an incognito window or separate browser tab and log in as **`charlie`**. You will see his active token balance has dropped to 9 because his token is currently held in escrow.
-4. On Alice's screen, click **Confirm We’re All Set!** to signal completion.
-5. On Charlie's screen, go to Swaps In Progress and also click **Confirm We’re All Set!**.
+4. On Alice's screen, click **Confirm We're All Set!** to signal completion.
+5. On Charlie's screen, go to Swaps In Progress and also click **Confirm We're All Set!**.
 6. Once both users have confirmed, the 1 held token transfers to Alice's balance (updating her total to 16). Charlie is then prompted to leave feedback.
 
 ### Flow 3: Feedback & Skill Endorsements
 
 1. In Charlie's session, click **Leave a Warm Note** on the completed Calculus swap under the history tab.
 2. Rate it **5 Stars**, leave a quick review, and submit.
-3. Pull up Alice’s public profile card. The 5-star review will show up on her wall, and her **"Learning & Growing"** counter under her skill endorsements will increment by 1.
+3. Pull up Alice's public profile card. The 5-star review will show up on her wall, and her **"Learning & Growing"** counter under her skill endorsements will increment by 1.
 
 ### Flow 4: Accountability & Late Cancellations
 
 1. Log in as **`elena`**. Go to your history and find an active swap you committed to: **"Everyday Errand: Grocery Delivery"** (starts in 4 hours).
 2. Click **Cancel Commitment**.
 3. A browser modal will warn you that canceling less than 24 hours in advance will negatively impact your community reputation. Click OK.
-4. Elena’s public **Neighbor Reliability Score** drops instantly, and her late-cancellation counter increments.
+4. Elena's public **Neighbor Reliability Score** drops instantly, and her late-cancellation counter increments.
 5. The 2 tokens locked in escrow for the task are automatically refunded to her active balance.
